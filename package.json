@@ -1,0 +1,71 @@
+{
+  "name": "windows-balance-demo",
+  "version": "0.1.0",
+  "private": true,
+  "author": "Cute-chen",
+  "homepage": "https://github.com/Cute-chen",
+  "description": "Tray balance app for AiCodeMirror (Windows/macOS)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron --no-sandbox --disable-gpu-sandbox --disable-gpu .",
+    "build:win": "electron-builder --win nsis",
+    "build:mac": "electron-builder --mac dmg"
+  },
+  "devDependencies": {
+    "electron": "^41.5.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.aicodemirror.balance.tray",
+    "productName": "AiCodeMirror Balance by Cute-chen",
+    "copyright": "Copyright © Cute-chen",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "files": [
+      "main.js",
+      "tray.ico",
+      "trayTemplate.png",
+      "icon.ico",
+      "icon.icns",
+      "icon-master.png",
+      "favicon.ico",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "icon": "icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "icon": "icon.ico",
+      "publisherName": "Cute-chen",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "installerIcon": "icon.ico",
+      "uninstallerIcon": "icon.ico",
+      "installerHeaderIcon": "icon.ico",
+      "shortcutName": "AiCodeMirror Balance by Cute-chen",
+      "uninstallDisplayName": "AiCodeMirror Balance by Cute-chen",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
