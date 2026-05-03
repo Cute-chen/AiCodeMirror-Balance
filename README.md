@@ -25,6 +25,17 @@
 - 打包：electron-builder
 - 安装包：Windows `NSIS(.exe)` / macOS `.dmg`
 
+## 使用方式（Release）
+
+当前已发布版本：**Releases v0.1 / AiCodeMirror Balance by Cute-chen v0.1.0**
+
+1. 打开仓库的 Releases 页面。
+2. 下载对应系统安装包：
+   - Windows：`.exe`
+   - macOS：`.dmg`
+3. 安装并启动应用。
+4. 首次打开后会自动弹出登录页，登录成功后托盘/菜单栏开始显示数据。
+
 ## 使用效果
 
 ### Windows
@@ -47,14 +58,14 @@
   <img src="./img/mac2.png" alt="macOS 菜单栏状态" width="320" />
 </p>
 
-## 快速开始
+## 本地开发
 
 ```bash
 npm install
 npm start
 ```
 
-## 打包
+## 本地打包
 
 ```bash
 # Windows 安装包
