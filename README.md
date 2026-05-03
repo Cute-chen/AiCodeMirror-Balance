@@ -1,44 +1,53 @@
 # AiCodeMirror Balance Tray
 
-跨平台（Windows / macOS）的状态栏余额工具，基于 Electron。
+跨平台（Windows / macOS）的状态栏余额工具，基于 Electron。  
+作者：**Cute-chen**  
+主页：[https://github.com/Cute-chen](https://github.com/Cute-chen)
 
-作者：**Cute-chen**
+## 功能特性
 
-## 功能
-
-- 托盘/菜单栏常驻显示余额状态
-- 登录窗口（站内登录，复用会话）
-- 余额展示（综合余额 + 分项余额）
-- 订阅信息（当前订阅、剩余天数）
-- 账号信息（手机号/邮箱）
-- 邀请码展示 + 一键复制邀请链接
+- 状态栏 / 托盘常驻显示
+- 内置登录窗口（复用会话）
+- 综合余额显示（订阅 + 按量）
+- 分项余额显示（订阅余额、按量余额）
+- 当前订阅与剩余天数
+- 账号信息、邀请码显示
+- 一键复制邀请链接
 - API Key 名称与总消耗展示
 - 刷新频率可配置（秒，最大 3600）
-- 清除登录态后自动打开登录页
-- 退出二次确认（防误触）
+- 清除登录态后自动回登录页
+- 退出二次确认，避免误触
 
 ## 技术框架
 
-- 框架：Electron（主进程 + BrowserWindow + Tray）
-- 网络请求：Electron `session.fetch`（同容器会话）
+- 框架：Electron
+- 网络：`session.fetch`（同容器会话）
 - 打包：electron-builder
-- 安装包格式：
-  - Windows：NSIS `.exe`
-  - macOS：`.dmg`
+- 安装包：Windows `NSIS(.exe)` / macOS `.dmg`
 
-## 目录结构
+## 使用效果
 
-```text
-windows-balance-demo/
-  main.js
-  package.json
-  tray.ico
-  trayTemplate.png
-  icon.ico
-  icon.icns
-```
+### Windows
 
-## 本地运行
+<p align="center">
+  <img src="./img/win1.png" alt="Windows 主界面" width="900" />
+</p>
+
+<p align="center">
+  <img src="./img/win2.png" alt="Windows 托盘状态" width="360" />
+</p>
+
+### macOS
+
+<p align="center">
+  <img src="./img/mac1.png" alt="macOS 主界面" width="900" />
+</p>
+
+<p align="center">
+  <img src="./img/mac2.png" alt="macOS 菜单栏状态" width="320" />
+</p>
+
+## 快速开始
 
 ```bash
 npm install
@@ -48,52 +57,33 @@ npm start
 ## 打包
 
 ```bash
-# Windows 安装包（NSIS .exe）
+# Windows 安装包
 npm run build:win
 
-# macOS 安装包（.dmg）
+# macOS 安装包
 npm run build:mac
 ```
 
-打包产物在 `dist/` 目录。
+打包产物位于 `dist/` 目录。
 
-## 图标说明
+## 安装包体积说明
 
-- 运行时托盘图标：
-  - Windows 使用 `tray.ico`
-  - macOS 使用 `trayTemplate.png`（模板图标）
-- 安装包 / 应用图标：
-  - Windows 使用 `icon.ico`
-  - macOS 使用 `icon.icns`
+Electron 安装包体积偏大是正常现象，主要原因：
 
-## 安装包体积说明（为什么看起来较大）
+- 自带 Chromium + Node.js 运行时
+- 每个平台都需携带对应运行时与资源
 
-这是 Electron 应用的常见现象，主要原因是：
+如需减小体积，可考虑：
 
-- Electron 会打包完整运行时（Chromium + Node.js）
-- 每个平台都要带一套对应平台运行时
-- 安装包还包含应用资源与依赖
+- 只构建单架构（例如仅 `x64` 或仅 `arm64`）
+- 精简打包文件
+- 迁移到 Tauri（依赖系统 WebView）
 
-所以 Electron 安装包通常明显大于原生应用或 Tauri 应用。
+## 安全提示
 
-如需进一步减小体积，可考虑：
-
-- 只打单架构（例如仅 `x64` 或仅 `arm64`）
-- 精简 `build.files` 中不必要文件
-- 使用更高压缩配置
-- 迁移到 Tauri（依赖系统 WebView，包体通常更小）
-
-## 注意事项
-
-- 本项目依赖目标站点当前接口结构，若站点改版可能需要同步更新。
-- 登录态是否长期有效由服务端控制，可能因风控/会话过期失效。
-- macOS 下若遇到 WebView 登录风控问题，建议优先在 Windows 使用。
-
-## 安全建议
-
-- 不要在日志或 issue 中贴出 Cookie、Token、完整 HAR。
-- 开源前确认未提交敏感测试数据。
+- 请勿在 issue 或日志中公开 Cookie/Token/完整 HAR 文件
+- 登录态失效由服务端策略决定，可能因风控提前过期
 
 ## License
 
-建议使用 MIT（可按你的仓库实际情况调整）。
+MIT
