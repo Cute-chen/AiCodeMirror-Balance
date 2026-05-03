@@ -90,10 +90,13 @@ Electron 安装包体积偏大是正常现象，主要原因：
 - 精简打包文件
 - 迁移到 Tauri（依赖系统 WebView）
 
-## 安全提示
+## 联系作者
 
-- 请勿在 issue 或日志中公开 Cookie/Token/完整 HAR 文件
-- 登录态失效由服务端策略决定，可能因风控提前过期
+如需反馈问题、定制功能或技术交流，可通过微信联系作者：
+
+<p align="center">
+  <img src="./img/wxchat.jpg" alt="微信联系作者" width="340" />
+</p>
 
 ## License
 
