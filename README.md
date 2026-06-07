@@ -95,7 +95,7 @@ Electron 安装包体积偏大是正常现象，主要原因：
 如需反馈问题、定制功能或技术交流，可通过微信联系作者：
 
 <p align="center">
-  <img src="./img/wxchat.jpg" alt="微信联系作者" width="340" />
+  <img src="./img/wechat.png" alt="微信联系作者" width="340" />
 </p>
 
 ## License
