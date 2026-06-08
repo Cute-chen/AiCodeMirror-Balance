@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AiCodeMirror 账户面板</title>
+    <link rel="stylesheet" href="./panel.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <div class="hero-top">
+          <p class="eyebrow">AiCodeMirror</p>
+          <button class="close-button" id="close-button" type="button" title="收起"></button>
+        </div>
+        <div class="hero-mainline">
+          <h1 id="total-balance">-</h1>
+          <button class="announcement-chip" id="announcement-button" type="button" hidden>
+            <span class="announcement-label">最新公告</span>
+            <span class="announcement-title" id="announcement-title">-</span>
+          </button>
+        </div>
+        <p class="subtitle" id="detail-text" hidden></p>
+      </header>
+
+      <section class="summary-grid">
+        <div class="stat-card">
+          <span>订阅</span>
+          <strong id="subscription-balance">-</strong>
+        </div>
+        <div class="stat-card">
+          <span>按量</span>
+          <strong id="usage-balance">-</strong>
+        </div>
+        <div class="stat-card">
+          <span>计划</span>
+          <strong id="plan-name">-</strong>
+        </div>
+        <div class="stat-card">
+          <span>剩余</span>
+          <strong id="days-left">-</strong>
+        </div>
+      </section>
+
+      <section class="meta-card account-card">
+        <div class="meta-grid">
+          <div class="meta-row">
+            <span>账号</span>
+            <strong id="account-name">-</strong>
+          </div>
+          <div class="meta-row">
+            <span>邀请码</span>
+            <strong id="invite-code">-</strong>
+          </div>
+          <div class="meta-row subtle">
+            <span>更新时间</span>
+            <strong id="updated-at">尚未同步</strong>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="secondary-button" id="dashboard-button" type="button">钱包页</button>
+          <button class="secondary-button" id="invite-button" type="button">复制邀请链接</button>
+        </div>
+      </section>
+
+      <section class="compact-card usage-card">
+        <div class="section-head usage-head">
+          <div class="head-stack">
+            <div class="tabs" id="usage-group-tabs"></div>
+          </div>
+          <h2 id="usage-title">近48h趋势</h2>
+        </div>
+        <div class="usage-overview" id="usage-overview"></div>
+        <div class="usage-grid" id="usage-grid"></div>
+      </section>
+
+      <section class="compact-card">
+        <div class="section-head">
+          <h2>API Key 用量</h2>
+          <button class="mini-button" id="manage-keys-button" type="button">管理Key</button>
+        </div>
+        <div class="key-list" id="key-list">
+          <div class="empty-state">暂无 API Key 数据</div>
+        </div>
+      </section>
+
+      <section class="compact-card">
+        <div class="section-head">
+          <h2>支持模型</h2>
+          <div class="tabs" id="model-group-tabs"></div>
+        </div>
+        <div class="model-list" id="model-list">
+          <div class="empty-state">暂无模型数据</div>
+        </div>
+      </section>
+    </div>
+    <div class="feedback-toast" id="feedback-toast" hidden></div>
+
+    <script src="./panel.js"></script>
+  </body>
+  </html>

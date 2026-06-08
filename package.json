@@ -22,6 +22,11 @@
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "files": [
       "main.js",
+      "preload.js",
+      "panel.html",
+      "opacity.html",
+      "panel.css",
+      "panel.js",
       "tray.ico",
       "trayTemplate.png",
       "icon.ico",
