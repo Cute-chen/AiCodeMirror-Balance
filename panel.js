@@ -2,6 +2,7 @@ let selectedUsageGroupKey = 'claude';
 let selectedModelGroupKey = 'claude';
 let currentState = null;
 let toastTimer = null;
+let currentPlatform = 'unknown';
 
 const detailText = document.getElementById('detail-text');
 const totalBalance = document.getElementById('total-balance');
@@ -273,6 +274,11 @@ function applyPanelOpacity(state) {
   document.documentElement.style.setProperty('--panel-opacity', String(percent / 100));
 }
 
+function applyPlatformMode(state) {
+  currentPlatform = String(state?.platform || 'unknown');
+  document.body.dataset.platform = currentPlatform;
+}
+
 function createEmptyMessage(text) {
   const div = document.createElement('div');
   div.className = 'empty-state';
@@ -392,7 +398,8 @@ function createLineChart(series) {
 
   const defs = createSvgNode('defs');
   const gradient = createSvgNode('linearGradient');
-  gradient.setAttribute('id', 'usage-fill');
+  const gradientId = `usage-fill-${selectedUsageGroupKey}`;
+  gradient.setAttribute('id', gradientId);
   gradient.setAttribute('x1', '0');
   gradient.setAttribute('y1', '0');
   gradient.setAttribute('x2', '0');
@@ -441,6 +448,7 @@ function createLineChart(series) {
   const area = createSvgNode('path');
   area.setAttribute('d', areaPath);
   area.setAttribute('class', 'usage-chart-area');
+  area.setAttribute('fill', `url(#${gradientId})`);
 
   const polyline = createSvgNode('polyline');
   polyline.setAttribute('points', pointString);
@@ -636,6 +644,7 @@ function render(state) {
 
   currentState = state;
   ensureSelectedGroups(state);
+  applyPlatformMode(state);
   applyThemeColor(state);
   applyPanelOpacity(state);
 

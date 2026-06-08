@@ -1,15 +1,19 @@
 {
   "name": "windows-balance-demo",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "private": true,
   "author": "Cute-chen",
   "homepage": "https://github.com/Cute-chen",
   "description": "Tray balance app for AiCodeMirror (Windows/macOS)",
   "main": "main.js",
   "scripts": {
-    "start": "electron --no-sandbox --disable-gpu-sandbox --disable-gpu .",
-    "build:win": "electron-builder --win nsis",
-    "build:mac": "electron-builder --mac dmg"
+    "start": "electron --no-sandbox --disable-gpu-sandbox .",
+    "build:win": "npm run build:win:x64 && npm run build:win:arm64",
+    "build:win:x64": "electron-builder --win nsis --x64",
+    "build:win:arm64": "electron-builder --win nsis --arm64",
+    "build:mac": "npm run build:mac:x64 && npm run build:mac:arm64",
+    "build:mac:x64": "electron-builder --mac dmg --x64",
+    "build:mac:arm64": "electron-builder --mac dmg --arm64"
   },
   "devDependencies": {
     "electron": "^41.5.0",
@@ -17,9 +21,9 @@
   },
   "build": {
     "appId": "com.aicodemirror.balance.tray",
-    "productName": "AiCodeMirror Balance by Cute-chen",
+    "productName": "AICM v2.0",
     "copyright": "Copyright © Cute-chen",
-    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "artifactName": "AICM-v2.0-${os}-${arch}.${ext}",
     "files": [
       "main.js",
       "preload.js",
@@ -40,6 +44,7 @@
     },
     "mac": {
       "icon": "icon.icns",
+      "category": "public.app-category.finance",
       "target": [
         {
           "target": "dmg",
@@ -53,6 +58,7 @@
     "win": {
       "icon": "icon.ico",
       "publisherName": "Cute-chen",
+      "executableName": "AICM v2.0",
       "target": [
         {
           "target": "nsis",
@@ -67,8 +73,8 @@
       "installerIcon": "icon.ico",
       "uninstallerIcon": "icon.ico",
       "installerHeaderIcon": "icon.ico",
-      "shortcutName": "AiCodeMirror Balance by Cute-chen",
-      "uninstallDisplayName": "AiCodeMirror Balance by Cute-chen",
+      "shortcutName": "AICM v2.0",
+      "uninstallDisplayName": "AICM v2.0",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
     }

@@ -25,6 +25,8 @@
   --radius-xl: 26px;
   --radius-lg: 18px;
   --radius-md: 16px;
+  --motion-duration: 140ms;
+  --glass-blur: 22px;
 }
 
 * {
@@ -70,8 +72,8 @@ body.is-loading {
       rgba(var(--panel-bottom-rgb), calc(0.92 * var(--panel-opacity)))
     );
   box-shadow: none;
-  backdrop-filter: blur(22px) saturate(145%);
-  -webkit-backdrop-filter: blur(22px) saturate(145%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(145%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(145%);
   isolation: isolate;
 }
 
@@ -151,7 +153,7 @@ button {
   align-items: flex-start;
   gap: 2px;
   text-align: left;
-  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+  transition: background var(--motion-duration) ease, border-color var(--motion-duration) ease, transform var(--motion-duration) ease;
 }
 
 .announcement-chip:hover {
@@ -201,7 +203,7 @@ button {
   border-radius: 999px;
   background: rgba(255, 255, 255, calc(0.74 * var(--panel-opacity)));
   cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+  transition: background var(--motion-duration) ease, border-color var(--motion-duration) ease, transform var(--motion-duration) ease;
 }
 
 .close-button::before,
@@ -320,7 +322,7 @@ button {
   border: 1px solid var(--line);
   border-radius: 14px;
   cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease, opacity 140ms ease;
+  transition: background var(--motion-duration) ease, border-color var(--motion-duration) ease, transform var(--motion-duration) ease, opacity var(--motion-duration) ease;
 }
 
 .secondary-button {
@@ -472,7 +474,7 @@ button:disabled {
 }
 
 .usage-chart-area {
-  fill: url(#usage-fill);
+  fill: none;
 }
 
 .usage-chart-line {
@@ -654,4 +656,39 @@ button:disabled {
   text-align: center;
   font-size: 12px;
   box-shadow: 0 14px 30px rgba(17, 50, 74, 0.22);
+}
+
+body[data-platform="win32"] {
+  --glass-blur: 0px;
+  --motion-duration: 90ms;
+}
+
+body[data-platform="win32"] .shell {
+  border-color: rgba(255, 255, 255, calc(0.42 * var(--panel-opacity)));
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, calc(0.68 * var(--panel-opacity))), transparent 28%),
+    linear-gradient(
+      180deg,
+      rgba(var(--panel-top-rgb), calc(0.98 * var(--panel-opacity))),
+      rgba(var(--panel-bottom-rgb), calc(0.96 * var(--panel-opacity)))
+    );
+}
+
+body[data-platform="win32"] .shell::before {
+  display: none;
+}
+
+body[data-platform="win32"] .announcement-chip,
+body[data-platform="win32"] .secondary-button,
+body[data-platform="win32"] .mini-button,
+body[data-platform="win32"] .tab-button,
+body[data-platform="win32"] .model-row,
+body[data-platform="win32"] .usage-summary,
+body[data-platform="win32"] .usage-item,
+body[data-platform="win32"] .key-item,
+body[data-platform="win32"] .empty-state,
+body[data-platform="win32"] .stat-card,
+body[data-platform="win32"] .meta-card,
+body[data-platform="win32"] .compact-card {
+  box-shadow: none;
 }

@@ -16,11 +16,17 @@ const {
 const fs = require('fs');
 const path = require('path');
 
-// Some environments (VM/remote desktop/sandbox) cannot launch Electron GPU process.
-// Force software rendering to avoid startup crash.
-app.disableHardwareAcceleration();
-app.commandLine.appendSwitch('disable-gpu');
-app.commandLine.appendSwitch('disable-gpu-compositing');
+const IS_MAC = process.platform === 'darwin';
+const IS_WINDOWS = process.platform === 'win32';
+const FORCE_SOFTWARE_RENDERING = process.env.AICM_DISABLE_GPU === '1';
+
+// Keep GPU acceleration on by default. Transparent windows with software rendering
+// are noticeably sluggish on Windows. For problematic environments, allow opt-in fallback.
+if (FORCE_SOFTWARE_RENDERING) {
+  app.disableHardwareAcceleration();
+  app.commandLine.appendSwitch('disable-gpu');
+  app.commandLine.appendSwitch('disable-gpu-compositing');
+}
 
 const BASE_URL = 'https://www.aicodemirror.com';
 const API_WALLET = `${BASE_URL}/api/wallet`;
@@ -59,6 +65,8 @@ const MIN_PANEL_HEIGHT = 520;
 const MAX_PANEL_HEIGHT = 920;
 const OPACITY_WIDTH = 332;
 const OPACITY_HEIGHT = 584;
+const WINDOWS_PANEL_BACKGROUND = '#e6f2fb';
+const WINDOWS_OPACITY_BACKGROUND = '#edf6fd';
 const MAC_TRAY_FALLBACK_TITLE = 'AICM';
 const SETTINGS_FILE_NAME = 'tray-settings.json';
 const DEFAULT_PANEL_OPACITY_PERCENT = 90;
@@ -68,6 +76,8 @@ const TRAY_TITLE_MODES = [
   { key: 'balance', label: '总余额' },
   { key: 'hidden', label: '关闭文字' }
 ];
+const WINDOW_BLUR_GUARD_MS = 240;
+const TRAY_CLICK_GUARD_MS = 220;
 const MODEL_PRODUCTS = [
   { key: 'claude', label: 'Claude', product: 'CLAUDECODE' },
   { key: 'codex', label: 'Codex', product: 'CODEX' },
@@ -90,6 +100,11 @@ let themeColorHex = DEFAULT_THEME_COLOR;
 let panelHeight = DEFAULT_PANEL_HEIGHT;
 let trayTitleMode = 'app';
 let isFetching = false;
+let panelBlurGuardUntil = 0;
+let opacityBlurGuardUntil = 0;
+let trayClickGuardUntil = 0;
+let panelReadyToShow = false;
+let pendingPanelShowBounds = null;
 
 let lastBalanceText = '未登录';
 let lastDetailText = '-';
@@ -434,6 +449,7 @@ function copyInviteLink(notify = true) {
 
 function createPanelState() {
   return {
+    platform: process.platform,
     statusText: lastBalanceText,
     detailText: lastDetailText,
     planText: lastPlanText,
@@ -513,8 +529,51 @@ function sendOpacityState() {
 }
 
 function applyPanelOpacity() {
-  if (!panelWin || panelWin.isDestroyed()) return;
-  panelWin.setOpacity(1);
+  const opacity = IS_WINDOWS
+    ? clamp(panelOpacityPercent / 100, 0.35, 1)
+    : 1;
+
+  if (panelWin && !panelWin.isDestroyed()) {
+    panelWin.setOpacity(opacity);
+  }
+  if (opacityWin && !opacityWin.isDestroyed()) {
+    opacityWin.setOpacity(opacity);
+  }
+}
+
+function applyWindowsBackdrop(win, material) {
+  if (!IS_WINDOWS || !win || win.isDestroyed()) return;
+  try {
+    if (typeof win.setBackgroundMaterial === 'function') {
+      win.setBackgroundMaterial(material);
+    }
+  } catch {
+    // Windows 10 or unsupported Windows 11 builds will ignore this path.
+  }
+}
+
+function armPanelBlurGuard() {
+  panelBlurGuardUntil = Date.now() + WINDOW_BLUR_GUARD_MS;
+}
+
+function armOpacityBlurGuard() {
+  opacityBlurGuardUntil = Date.now() + WINDOW_BLUR_GUARD_MS;
+}
+
+function armTrayClickGuard() {
+  trayClickGuardUntil = Date.now() + TRAY_CLICK_GUARD_MS;
+}
+
+function shouldIgnorePanelBlur() {
+  return IS_WINDOWS && Date.now() < panelBlurGuardUntil;
+}
+
+function shouldIgnoreOpacityBlur() {
+  return IS_WINDOWS && Date.now() < opacityBlurGuardUntil;
+}
+
+function shouldIgnoreTrayClick() {
+  return IS_WINDOWS && Date.now() < trayClickGuardUntil;
 }
 
 function buildPanelQuery() {
@@ -631,23 +690,28 @@ function calculateOpacityWindowPosition(fallbackBounds) {
 function createPanelWindow() {
   if (panelWin && !panelWin.isDestroyed()) return panelWin;
 
+  panelReadyToShow = false;
+  pendingPanelShowBounds = null;
   panelWin = new BrowserWindow({
     width: PANEL_WIDTH,
     height: panelHeight,
     show: false,
     frame: false,
-    transparent: true,
+    transparent: !IS_WINDOWS,
     resizable: false,
     minimizable: false,
     maximizable: false,
     fullscreenable: false,
+    autoHideMenuBar: true,
     skipTaskbar: true,
     alwaysOnTop: true,
-    hasShadow: process.platform !== 'darwin',
-    backgroundColor: '#00000000',
+    hasShadow: !IS_MAC,
+    backgroundColor: IS_WINDOWS ? WINDOWS_PANEL_BACKGROUND : '#00000000',
     title: 'AiCodeMirror 账户面板',
     focusable: true,
     acceptFirstMouse: true,
+    roundedCorners: !IS_WINDOWS,
+    paintWhenInitiallyHidden: true,
     webPreferences: {
       preload: PANEL_PRELOAD_PATH,
       nodeIntegration: true,
@@ -658,14 +722,43 @@ function createPanelWindow() {
 
   applyPanelOpacity();
   panelWin.setAlwaysOnTop(true);
+  panelWin.setSkipTaskbar(true);
+  panelWin.setAutoHideMenuBar(true);
+  panelWin.setMenuBarVisibility(false);
+  applyWindowsBackdrop(panelWin, 'acrylic');
   panelWin.loadFile(PANEL_HTML_PATH, { query: buildPanelQuery() });
 
   panelWin.on('closed', () => {
     panelWin = null;
+    panelReadyToShow = false;
+    pendingPanelShowBounds = null;
+  });
+
+  panelWin.on('show', () => {
+    panelWin?.setSkipTaskbar(true);
+  });
+
+  panelWin.on('blur', () => {
+    if (shouldIgnorePanelBlur()) {
+      return;
+    }
+    if (!IS_WINDOWS && panelWin && !panelWin.isDestroyed()) {
+      panelWin.hide();
+    }
   });
 
   panelWin.webContents.on('did-finish-load', () => {
     sendPanelState();
+  });
+
+  panelWin.once('ready-to-show', () => {
+    panelReadyToShow = true;
+    sendPanelState();
+    if (pendingPanelShowBounds) {
+      const bounds = pendingPanelShowBounds;
+      pendingPanelShowBounds = null;
+      showPanel(bounds);
+    }
   });
 
   return panelWin;
@@ -679,18 +772,20 @@ function createOpacityWindow() {
     height: OPACITY_HEIGHT,
     show: false,
     frame: false,
-    transparent: true,
+    transparent: !IS_WINDOWS,
     resizable: false,
     minimizable: false,
     maximizable: false,
     fullscreenable: false,
+    autoHideMenuBar: true,
     skipTaskbar: true,
     alwaysOnTop: true,
-    hasShadow: process.platform !== 'darwin',
-    backgroundColor: '#00000000',
+    hasShadow: !IS_MAC,
+    backgroundColor: IS_WINDOWS ? WINDOWS_OPACITY_BACKGROUND : '#00000000',
     title: '面板主题',
     focusable: true,
     acceptFirstMouse: true,
+    roundedCorners: !IS_WINDOWS,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -698,6 +793,11 @@ function createOpacityWindow() {
     }
   });
 
+  opacityWin.setSkipTaskbar(true);
+  opacityWin.setAutoHideMenuBar(true);
+  opacityWin.setMenuBarVisibility(false);
+  applyPanelOpacity();
+  applyWindowsBackdrop(opacityWin, 'mica');
   opacityWin.loadFile(OPACITY_HTML_PATH);
 
   opacityWin.on('closed', () => {
@@ -705,7 +805,10 @@ function createOpacityWindow() {
   });
 
   opacityWin.on('blur', () => {
-    if (opacityWin && !opacityWin.isDestroyed()) {
+    if (shouldIgnoreOpacityBlur()) {
+      return;
+    }
+    if (!IS_WINDOWS && opacityWin && !opacityWin.isDestroyed()) {
       opacityWin.hide();
     }
   });
@@ -719,8 +822,13 @@ function createOpacityWindow() {
 
 function showPanel(fallbackBounds) {
   const win = createPanelWindow();
+  if (IS_WINDOWS && !panelReadyToShow) {
+    pendingPanelShowBounds = fallbackBounds || tray?.getBounds?.() || null;
+    return;
+  }
   const { x, y } = calculatePanelPosition(fallbackBounds);
-  if (process.platform === 'darwin' && typeof app.focus === 'function') {
+  armPanelBlurGuard();
+  if (IS_MAC && typeof app.focus === 'function') {
     app.focus({ steal: true });
   }
   if (win.webContents.isLoading()) {
@@ -732,12 +840,17 @@ function showPanel(fallbackBounds) {
   }
   win.setBounds({ x, y, width: PANEL_WIDTH, height: panelHeight });
   win.setFocusable(true);
+  win.setSkipTaskbar(true);
   win.show();
-  win.focus();
+  if (!IS_WINDOWS || win.isFocusable()) {
+    win.focus();
+  }
 }
 
 function hidePanel() {
   if (!panelWin || panelWin.isDestroyed()) return;
+  panelBlurGuardUntil = 0;
+  pendingPanelShowBounds = null;
   panelWin.hide();
 }
 
@@ -745,7 +858,8 @@ function showOpacityWindow(fallbackBounds) {
   showPanel(fallbackBounds);
   const win = createOpacityWindow();
   const { x, y } = calculateOpacityWindowPosition(fallbackBounds);
-  if (process.platform === 'darwin' && typeof app.focus === 'function') {
+  armOpacityBlurGuard();
+  if (IS_MAC && typeof app.focus === 'function') {
     app.focus({ steal: true });
   }
   if (win.webContents.isLoading()) {
@@ -756,12 +870,16 @@ function showOpacityWindow(fallbackBounds) {
     sendOpacityState();
   }
   win.setBounds({ x, y, width: OPACITY_WIDTH, height: OPACITY_HEIGHT });
+  win.setSkipTaskbar(true);
   win.show();
-  win.focus();
+  if (!IS_WINDOWS || win.isFocusable()) {
+    win.focus();
+  }
 }
 
 function hideOpacityWindow() {
   if (!opacityWin || opacityWin.isDestroyed()) return;
+  opacityBlurGuardUntil = 0;
   opacityWin.hide();
 }
 
@@ -1274,7 +1392,7 @@ function updateTrayMenu() {
     tray.setTitle(getTrayTitleText());
   }
 
-  currentContextMenu = Menu.buildFromTemplate([
+  const template = [
     {
       label: '显示面板',
       click: () => showPanel(tray.getBounds())
@@ -1287,8 +1405,11 @@ function updateTrayMenu() {
     {
       label: `调整主题（${themeColorHex.toUpperCase()} / ${panelOpacityPercent}%）`,
       click: () => showOpacityWindow(tray.getBounds())
-    },
-    {
+    }
+  ];
+
+  if (IS_MAC) {
+    template.push({
       label: `菜单栏文字（当前${getTrayTitleModeLabel()}）`,
       submenu: TRAY_TITLE_MODES.map((mode) => ({
         label: mode.label,
@@ -1300,7 +1421,10 @@ function updateTrayMenu() {
           updateTrayMenu();
         }
       }))
-    },
+    });
+  }
+
+  template.push(
     {
       label: `设置刷新频率（当前${refreshSeconds}秒）`,
       submenu: REFRESH_OPTIONS.map((seconds) => ({
@@ -1321,7 +1445,9 @@ function updateTrayMenu() {
       label: '退出应用',
       click: () => app.quit()
     }
-  ]);
+  );
+
+  currentContextMenu = Menu.buildFromTemplate(template);
 
   if (process.platform !== 'darwin') {
     tray.setContextMenu(currentContextMenu);
@@ -1393,7 +1519,7 @@ function registerPanelIpc() {
 }
 
 async function bootstrap() {
-  if (process.platform === 'darwin' && app.dock) {
+  if (IS_MAC && app.dock) {
     app.setActivationPolicy('accessory');
     app.dock.hide();
   }
@@ -1403,12 +1529,17 @@ async function bootstrap() {
   tray = new Tray(createTrayIcon());
   tray.setIgnoreDoubleClickEvents(true);
   tray.on('click', (_event, bounds) => {
+    if (shouldIgnoreTrayClick()) {
+      return;
+    }
+    armTrayClickGuard();
     togglePanel(bounds);
   });
   tray.on('right-click', () => {
     showContextMenu();
   });
   updateTrayMenu();
+  createPanelWindow();
 
   const loggedIn = await hasValidSession();
   if (loggedIn) {
